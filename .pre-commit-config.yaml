@@ -1,0 +1,26 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0  # Use the latest version
+    hooks:
+      - id: trailing-whitespace
+        name: Remove trailing whitespace
+        description: Automatically remove trailing whitespace
+        args: ["--markdown-linebreak-ext=md"]
+
+  - repo: https://github.com/psf/black
+    rev: 23.9.1  # You can replace this with the latest version of Black
+    hooks:
+      - id: black
+        language_version: python3  # Ensure that Black uses the correct Python version
+        args: ['--line-length', '180']  # You can adjust the line length as per your project
+
+          # Match your Python version
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.1.0
+    hooks:
+      - id: flake8
+        args: [--max-line-length=180]
+        additional_dependencies:
+          - flake8
+
+
