@@ -19,7 +19,7 @@ current_date = datetime.today().date()
 def plot_result(y, forecast, clinic_id):
 
     # Get confidence intervals
-    forecast_index = pd.date_range(start=y.index[-1] + pd.Timedelta(days=1), periods=14, freq="D")
+    forecast_index = pd.date_range(start=y.index[-1] + pd.Timedelta(days=1), periods=28, freq="D")
     forecast_mean = forecast.predicted_mean.astype(int)
     forecast_ci = forecast.conf_int()
     forecast_top = forecast_ci.iloc[:, 1].astype(int)
