@@ -140,12 +140,12 @@ def show_graph(df):
 
     # Add text labels for Real_mid_line
     for i, row in df.iterrows():
-        ax1.text(row["Date"], row["Real_mid_line"], f'{row["Real_mid_line"]:.1f}', 
+        ax1.text(row["Date"], row["Real_mid_line"], int(row["Real_mid_line"]), 
                  fontsize=8, color="blue", ha="center", va="bottom", rotation=45)
 
     # Add text labels for Counsel_plan (bar chart)
     for i, row in df.iterrows():
-        ax2.text(row["Date"], 0, f'{row["Counsel_plan"]:.1f}', 
+        ax2.text(row["Date"], 0, int(row["Counsel_plan"]), 
                  fontsize=8, color="black", ha="center", va="bottom", rotation=45)
 
     # Labels and title

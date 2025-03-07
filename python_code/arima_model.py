@@ -153,7 +153,7 @@ def arima_output():
 
         # Exogenous variables (holiday flags)
         exog = df_clinic.loc[df_clinic.index <= pd.to_datetime(current_date), ["national_holiday", "clinic_holiday"]]
-        forecast_exog = df_clinic.loc[df_clinic.index >= pd.to_datetime(current_date), ["national_holiday", "clinic_holiday"]][:28]
+        forecast_exog = df_clinic.loc[df_clinic.index > pd.to_datetime(current_date), ["national_holiday", "clinic_holiday"]][:28]
 
         # Find the best ARIMA (p, d, q) with exogenous variables
         best_p, best_d, best_q = find_best_arima_params(y, exog, (0, 4), (0, 3), (0, 4))
@@ -165,8 +165,8 @@ def arima_output():
 
         # Forecast next 14 days
         forecast = arima_result.get_forecast(steps=28, exog=forecast_exog)
-        print(forecast.summary())
-        print(forecast.columns)
+        # print(forecast.summary())
+        # print(forecast.columns)
 
         # Get confidence intervals
         forecast_index = pd.date_range(start=y.index[-1] + pd.Timedelta(days=1), periods=28, freq="D")
