@@ -16,6 +16,8 @@ sys.path.append(str(project_root))
 from utils.common_selenium_access_module import run_metabase  # noqa: E402, F401
 from utils.output_date import get_current_date_string, get_current_date_parts, get_last_day_of_month, get_next_month_details  # noqa: E402, F401
 
+current_date = datetime.today().date()
+
 def get_current_plan_visit():
     TARGET_URL = "https://metabase.medical-frontier.net/question/5810-web"
     FILE_PATTERN = r"~/Downloads/web予約受付____予約作成日ベース　重複削除_　来院数予測_*.csv"
@@ -25,6 +27,7 @@ def get_current_plan_visit():
 
 
 def read_current_plan():
+    # get_current_plan_visit()
     group_data = pd.read_csv("../data/clinic_plan_visit.csv")
     group_data["day"] = pd.to_datetime(group_data["day"])
     group_data = group_data.groupby("day", as_index=False)["reservations"].sum()
@@ -52,6 +55,7 @@ def concate_model():
         "Forecast 95% Top": "Top_Arima_forcast",
         "Forecast 95% Bot": "Bot_Arima_forcast",
     })
+    # get_arima_data["Arima_forcast"] = get_arima_data["Arima_forcast"].astype(int)*-1
 
     get_sarima_data = pd.read_csv("../data/sarima_forecast.csv")
     get_sarima_data = get_sarima_data.rename(columns={
@@ -73,11 +77,20 @@ def concate_model():
         target_youbi = get_date_youbi(target_datetime)
         sarima_result = row["Sarima_forcast"]
         arima_result = row["Arima_forcast"]
+        Top_Arima_forcast = row["Top_Arima_forcast"]
+        Bot_Arima_forcast = row["Bot_Arima_forcast"]
+        Top_Sarima_forcast = row["Top_Sarima_forcast"]
+        Bot_Sarima_forcast = row["Bot_Sarima_forcast"]
 
         if target_youbi == "土":
             get_total.at[index, "Real_mid_line"] = sarima_result
+            get_total.at[index, "Top_forcast"] = Top_Sarima_forcast
+            get_total.at[index, "Bot_forcast"] = Bot_Sarima_forcast
         else:
             get_total.at[index, "Real_mid_line"] = arima_result
+            get_total.at[index, "Top_forcast"] = Top_Arima_forcast
+            get_total.at[index, "Bot_forcast"] = Bot_Arima_forcast  
+                 
 
     return get_total
 
@@ -88,16 +101,17 @@ def show_graph(df):
     # 日数制限を設定
     daycount_1month = 30
     daycount_1week = 7
-    daycount_1day = 1
+    daycount_1day = 2
 
     # 現在の最新日を取得
-    latest_date = df["Date"].max()
-    latest_date = latest_date.replace(day=1)
+    current_date = pd.to_datetime(datetime.today().date())
+    # latest_date = df["Date"].max()
+    # latest_date = latest_date.replace(day=1)
 
     # 各期間のフィルタ
-    df_1month = df[df["Date"] <= latest_date + pd.Timedelta(days=daycount_1month)]
-    df_1week = df[df["Date"] <= latest_date + pd.Timedelta(days=daycount_1week)]
-    df_1day = df[df["Date"] <= latest_date + pd.Timedelta(days=daycount_1day)]
+    df_1month = df[df["Date"] <= current_date + pd.Timedelta(days=daycount_1month)]
+    df_1week = df[df["Date"] <= current_date + pd.Timedelta(days=daycount_1week)]
+    df_1day = df[df["Date"] <= current_date + pd.Timedelta(days=daycount_1day)]
 
     fig, ax1 = plt.subplots(figsize=(12, 6))
 
@@ -110,19 +124,29 @@ def show_graph(df):
 
     # 1週間の範囲
     ax1.fill_between(df_1week["Date"], 
-                    (df_1week["Real_mid_line"] + df_1week["Top_Arima_forcast"]) * 0.5, 
-                    (df_1week["Real_mid_line"] + df_1week["Bot_Arima_forcast"]) * 0.5, 
+                    (df_1week["Real_mid_line"] + df_1week["Top_forcast"]) * 0.5, 
+                    (df_1week["Real_mid_line"] + df_1week["Bot_forcast"]) * 0.5, 
                     alpha=0.5, color="lightcoral", label="1week")
 
     # 1日の範囲
     ax1.fill_between(df_1day["Date"], 
-                    (df_1day["Real_mid_line"] * 2 + df_1day["Top_Arima_forcast"]) * 0.33, 
-                    (df_1day["Real_mid_line"] * 2 + df_1day["Bot_Arima_forcast"]) * 0.33, 
-                    alpha=0.7, color="gray", label="1day")
+                    (df_1day["Real_mid_line"] * 2 + df_1day["Top_forcast"]) * 0.33, 
+                    (df_1day["Real_mid_line"] * 2 + df_1day["Bot_forcast"]) * 0.33, 
+                    alpha=0.7, color="green", label="1day")
 
     # Create a secondary y-axis for bar chart
     ax2 = ax1.twinx()
     ax2.bar(df["Date"], df["Counsel_plan"], color="gray", alpha=0.5, label="Counsel Plan", width=0.5)
+
+    # Add text labels for Real_mid_line
+    for i, row in df.iterrows():
+        ax1.text(row["Date"], row["Real_mid_line"], f'{row["Real_mid_line"]:.1f}', 
+                 fontsize=8, color="blue", ha="center", va="bottom", rotation=45)
+
+    # Add text labels for Counsel_plan (bar chart)
+    for i, row in df.iterrows():
+        ax2.text(row["Date"], 0, f'{row["Counsel_plan"]:.1f}', 
+                 fontsize=8, color="black", ha="center", va="bottom", rotation=45)
 
     # Labels and title
     ax1.set_xlabel("Date")

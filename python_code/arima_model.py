@@ -7,10 +7,9 @@ import matplotlib.pyplot as plt
 # 統計ライブラリ
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from statsmodels.tsa.arima.model import ARIMA
-from statsmodels.tsa.stattools import adfuller
 
 # 時間関連ライブラリ
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Get the current date
 current_date = datetime.today().date()
@@ -104,7 +103,7 @@ def before_arima():
     df_calender_rest = df_calender_rest[
         (df_calender_rest["date"] >= pd.Timestamp("2023-04-01")) &
         # (df_calender_rest["date"] <= pd.Timestamp(current_date) + pd.Timedelta(days=14))
-        (df_calender_rest["date"] <= pd.Timestamp("2025-01-31") + pd.Timedelta(days=28))
+        (df_calender_rest["date"] <= pd.to_datetime(current_date) + pd.Timedelta(days=28))
     ]
 
     df_calender_rest = df_calender_rest.reset_index()
@@ -150,11 +149,11 @@ def arima_output():
         df_clinic[["national_holiday", "clinic_holiday"]] = df_clinic[["national_holiday", "clinic_holiday"]].applymap(lambda x: 1 if x else 0)
 
         # Define target variable
-        y = df_clinic.loc[df_clinic.index <= pd.Timestamp("2025-01-31"), "counseled"]
+        y = df_clinic.loc[df_clinic.index <= pd.to_datetime(current_date), "counseled"]
 
         # Exogenous variables (holiday flags)
-        exog = df_clinic.loc[df_clinic.index <= pd.Timestamp("2025-01-31"), ["national_holiday", "clinic_holiday"]]
-        forecast_exog = df_clinic.loc[df_clinic.index >= pd.Timestamp("2025-02-01"), ["national_holiday", "clinic_holiday"]][:28]
+        exog = df_clinic.loc[df_clinic.index <= pd.to_datetime(current_date), ["national_holiday", "clinic_holiday"]]
+        forecast_exog = df_clinic.loc[df_clinic.index >= pd.to_datetime(current_date), ["national_holiday", "clinic_holiday"]][:28]
 
         # Find the best ARIMA (p, d, q) with exogenous variables
         best_p, best_d, best_q = find_best_arima_params(y, exog, (0, 4), (0, 3), (0, 4))
@@ -162,10 +161,12 @@ def arima_output():
         arima_result = model.fit()
 
         # Print model summary
-        print(arima_result.summary())
+        # print(arima_result.summary())
 
         # Forecast next 14 days
         forecast = arima_result.get_forecast(steps=28, exog=forecast_exog)
+        print(forecast.summary())
+        print(forecast.columns)
 
         # Get confidence intervals
         forecast_index = pd.date_range(start=y.index[-1] + pd.Timedelta(days=1), periods=28, freq="D")
@@ -178,7 +179,7 @@ def arima_output():
         forecast_df = pd.DataFrame({
             "clinic_id": clinic_id,
             "Date": forecast_index,
-            "Forecast": forecast_mean,
+            "Forecast": (forecast_top + forecast_bot) / 2,
             "Forecast 95% Top": forecast_top,
             "Forecast 95% Bot": forecast_bot
         })

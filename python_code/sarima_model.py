@@ -83,7 +83,7 @@ def before_sarima():
     df_calender_rest = df_calender_rest[
         (df_calender_rest["date"] >= pd.Timestamp("2023-04-01")) &
         # (df_calender_rest["date"] <= pd.Timestamp(current_date) + pd.Timedelta(days=14))
-        (df_calender_rest["date"] <= pd.Timestamp("2025-01-31") + pd.Timedelta(days=28))
+        (df_calender_rest["date"] <= pd.to_datetime(current_date) + pd.Timedelta(days=28))
     ]
 
     df_calender_rest = df_calender_rest.reset_index()
@@ -136,7 +136,7 @@ def sarima_output():
         # Define exogenous variables
         exog = df_clinic[["national_holiday", "clinic_holiday"]]
         exog = exog[~exog.index.duplicated(keep="first")]
-        y = df_clinic.loc[df_clinic.index <= pd.Timestamp("2025-01-31"), "counseled"]
+        y = df_clinic.loc[df_clinic.index <= pd.to_datetime(current_date), "counseled"]
         y = y[~y.index.duplicated(keep="first")]
         print(y.index[y.index.duplicated()])
 
