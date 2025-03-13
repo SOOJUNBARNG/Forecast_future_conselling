@@ -81,7 +81,7 @@ def before_sarima():
     # Convert the date column to datetime format
     df_calender_rest["date"] = pd.to_datetime(df_calender_rest["date"])
     df_calender_rest = df_calender_rest[
-        (df_calender_rest["date"] >= pd.Timestamp("2023-04-01")) &
+        (df_calender_rest["date"] >= pd.Timestamp("2024-03-01")) &
         # (df_calender_rest["date"] <= pd.Timestamp(current_date) + pd.Timedelta(days=14))
         (df_calender_rest["date"] <= pd.to_datetime(current_date) + pd.Timedelta(days=28))
     ]
@@ -99,10 +99,11 @@ def before_sarima():
         "tcb_holiday":"clinic_holiday",
         })
     # df_before_sarima.to_csv("check_for_normal.csv", index=False)
-
+    df_before_sarima["day_of_week"] = df_before_sarima["date"].dt.dayofweek
     print(df_before_sarima.index[df_before_sarima.index.duplicated()])
     # print(df_before_sarima.columns)
     # print(df_before_sarima.head(10))
+    print("Data end")
 
     return df_before_sarima
 
@@ -110,13 +111,14 @@ def before_sarima():
 def sarima_output():
     df = before_sarima()  # Get preprocessed data
 
-    df.to_csv("nyan.csv", index=False)
+    df.to_csv("check_for_normal.csv", index=False)
 
     # Convert date column to datetime
     df["date"] = pd.to_datetime(df["date"])
+    df.index = pd.DatetimeIndex(df.index).to_period("D")  # Daily frequency
 
     # Define SARIMA parameters
-    best_params = {'p': 0, 'd': 1, 'q': 2, 'P': 3, 'D': 2, 'Q': 3}
+    best_params = {'p': 0, 'd': 1, 'q': 4, 'P': 2, 'D': 1, 'Q': 0}
     p, d, q = best_params["p"], best_params["d"], best_params["q"]
     P, D, Q, S = best_params["P"], best_params["D"], best_params["Q"], 7  # Weekly seasonality
 
@@ -130,11 +132,13 @@ def sarima_output():
         df_clinic.set_index("date", inplace=True)
 
         # Convert holidays to binary flags
-        df_clinic[["national_holiday", "clinic_holiday"]] = df_clinic[["national_holiday", "clinic_holiday"]].applymap(lambda x: 1 if x else 0)
+        df_clinic["national_holiday"] = df_clinic["national_holiday"].map(lambda x: 1 if x else 0)
+        df_clinic["clinic_holiday"] = df_clinic["clinic_holiday"].map(lambda x: 1 if x else 0)
+
         print(df_clinic.index[df_clinic.index.duplicated()])
 
         # Define exogenous variables
-        exog = df_clinic[["national_holiday", "clinic_holiday"]]
+        exog = df_clinic[["national_holiday", "clinic_holiday", "day_of_week"]]
         exog = exog[~exog.index.duplicated(keep="first")]
         y = df_clinic.loc[df_clinic.index <= pd.to_datetime(current_date), "counseled"]
         y = y[~y.index.duplicated(keep="first")]

@@ -17,6 +17,9 @@ def job():
     time.sleep(10)
     subprocess.run(["python", r"concate_model.py"])
     time.sleep(10)
+    subprocess.run(["python", r"check_model.py"])
+    time.sleep(10)
+
 
     return
 

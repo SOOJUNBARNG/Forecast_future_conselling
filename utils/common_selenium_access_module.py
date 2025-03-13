@@ -11,6 +11,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 ID = "ban.sujun@medical-frontier.jp"
 PW = "Ghostkill91!"
@@ -77,16 +78,20 @@ def run_metabase(TARGET_URL, FILE_PATTERN, DIRECTORY, OUTPUT_FILE):
         wait = WebDriverWait(driver, 10)
 
         # ボタンをクリックする
-        time.sleep(15)
-        element_to_click = wait.until(
-            EC.element_to_be_clickable(
-                (
-                    By.XPATH,
-                    '//*[@id="root"]/div/div/main/div/div/div[2]/main/div[3]/div/div[3]/button/div/div',
-                )
-            )
-        )
-        element_to_click.click()
+        # 変更される？
+        time.sleep(50)
+        xpath_options = [
+            '//*[@id="root"]/div/div/main/div/div/div[2]/main/div[3]/div/div[2]/button/div/div',
+            '//*[@id="root"]/div/div/main/div/div/div[2]/main/div[3]/div/div[3]/button/div/div'
+        ]
+
+        for xpath in xpath_options:
+            try:
+                element_to_click = wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
+                element_to_click.click()
+                break  # Exit loop if click is successful
+            except (TimeoutException, NoSuchElementException):
+                continue  # Try the next XPath if the current one fails     
 
         for tippy_id in ["14", "13", "15", "16"]:
             try:

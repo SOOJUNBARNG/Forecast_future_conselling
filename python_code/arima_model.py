@@ -36,23 +36,23 @@ def plot_result(y, forecast, clinic_id):
     plt.show()
 
 
-def find_best_arima_params(y, exog=None, p_range=(0, 3), d_range=(0, 2), q_range=(0, 3)):
-    print(f"p_range: {p_range}, d_range: {d_range}, q_range: {q_range}")
-    """Find the best (p, d, q) for ARIMA using AIC."""
-    best_aic = float("inf")
-    best_params = None
+# def find_best_arima_params(y, exog=None, p_range=(0, 3), d_range=(0, 2), q_range=(0, 3)):
+#     print(f"p_range: {p_range}, d_range: {d_range}, q_range: {q_range}")
+#     """Find the best (p, d, q) for ARIMA using AIC."""
+#     best_aic = float("inf")
+#     best_params = None
     
-    for p, d, q in itertools.product(range(*p_range), range(*d_range), range(*q_range)):
-        try:
-            model = ARIMA(y, order=(p, d, q), exog=exog)  # Include exog
-            result = model.fit()
-            if result.aic < best_aic:
-                best_aic = result.aic
-                best_params = (p, d, q)
-        except:
-            continue  # Skip invalid models
+#     for p, d, q in itertools.product(range(*p_range), range(*d_range), range(*q_range)):
+#         try:
+#             model = ARIMA(y, order=(p, d, q), exog=exog)  # Include exog
+#             result = model.fit()
+#             if result.aic < best_aic:
+#                 best_aic = result.aic
+#                 best_params = (p, d, q)
+#         except:
+#             continue  # Skip invalid models
     
-    return best_params
+#     return best_params
 
 
 def before_arima():
@@ -101,7 +101,7 @@ def before_arima():
     # Convert the date column to datetime format
     df_calender_rest["date"] = pd.to_datetime(df_calender_rest["date"])
     df_calender_rest = df_calender_rest[
-        (df_calender_rest["date"] >= pd.Timestamp("2023-04-01")) &
+        (df_calender_rest["date"] >= pd.Timestamp("2024-03-01")) &
         # (df_calender_rest["date"] <= pd.Timestamp(current_date) + pd.Timedelta(days=14))
         (df_calender_rest["date"] <= pd.to_datetime(current_date) + pd.Timedelta(days=28))
     ]
@@ -118,11 +118,12 @@ def before_arima():
     df_before_sarima = df_before_sarima.rename(columns={
         "tcb_holiday":"clinic_holiday",
         })
-    # df_before_sarima.to_csv("check_for_normal.csv", index=False)
+    df_before_sarima["day_of_week"] = df_before_sarima["date"].dt.dayofweek
+    # df_before_sarima["day_of_week"] = df_before_sarima["date"].dt.dayofweek.map(
+    #     {0: "月", 1: "火", 2: "水", 3: "木", 4: "金", 5: "土", 6: "日"}
+    # )
 
     print(df_before_sarima.index[df_before_sarima.index.duplicated()])
-    # print(df_before_sarima.columns)
-    # print(df_before_sarima.head(10))
 
     return df_before_sarima
 
@@ -152,11 +153,11 @@ def arima_output():
         y = df_clinic.loc[df_clinic.index <= pd.to_datetime(current_date), "counseled"]
 
         # Exogenous variables (holiday flags)
-        exog = df_clinic.loc[df_clinic.index <= pd.to_datetime(current_date), ["national_holiday", "clinic_holiday"]]
-        forecast_exog = df_clinic.loc[df_clinic.index > pd.to_datetime(current_date), ["national_holiday", "clinic_holiday"]][:28]
+        exog = df_clinic.loc[df_clinic.index <= pd.to_datetime(current_date), ["national_holiday", "clinic_holiday","day_of_week"]]
+        forecast_exog = df_clinic.loc[df_clinic.index > pd.to_datetime(current_date), ["national_holiday", "clinic_holiday","day_of_week"]][:28]
 
         # Find the best ARIMA (p, d, q) with exogenous variables
-        best_p, best_d, best_q = find_best_arima_params(y, exog, (0, 4), (0, 3), (0, 4))
+        best_p, best_d, best_q = 0, 1, 4
         model = ARIMA(y, order=(best_p, best_d, best_q), exog=exog)
         arima_result = model.fit()
 
