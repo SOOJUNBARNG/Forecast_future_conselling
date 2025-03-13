@@ -42,3 +42,10 @@ Choose S based on known seasonality:
 7 for daily data with weekly seasonality.
 12 for monthly data.
 24 for hourly data with daily seasonality.
+
+<!-- Best SARIMA Parameters: {'p': 0, 'd': 0, 'q': 1, 'P': 2, 'D': 2, 'Q': 0, 'S': 100}
+C:\Users\analyticsteam_share\Lib\site-packages\statsmodels\tsa\base\tsa_model.py:473: ValueWarning: A date index has been provided, but it has no associated frequency information and so will be ignored when e.g. forecasting.
+  self._init_dates(dates, freq)
+C:\Users\analyticsteam_share\Lib\site-packages\statsmodels\tsa\base\tsa_model.py:473: ValueWarning: A date index has been provided, but it has no associated frequency information and so will be ignored when e.g. forecasting.
+  self._init_dates(dates, freq)
+Best SARIMA AIC: 5076.450577587952 -->

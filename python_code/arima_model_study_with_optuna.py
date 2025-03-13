@@ -19,34 +19,27 @@ df = df.groupby("日付")["counseled"].sum().reset_index()
 df.set_index("日付", inplace=True)
 
 
-def arima_objective(df):
-    print(f"p_range: {p_range}, d_range: {d_range}, q_range: {q_range}")
-    """Find the best (p, d, q) for ARIMA using AIC."""
-    best_aic = float("inf")
-    best_params = None
-    p_range=(0, 3)
-    d_range=(0, 2)
-    q_range=(0, 3)
-    
-    for p, d, q in itertools.product(range(*p_range), range(*d_range), range(*q_range)):
-        try:
-            model = ARIMA(df["counseled"], order=(p, d, q))  # Include exog
-            result = model.fit()
-            if result.aic < best_aic:
-                best_aic = result.aic
-                best_params = (p, d, q)
-        except:
-            continue  # Skip invalid models
-    
-    return best_params
+def arima_objective(trial):
+    """Objective function for Optuna optimization."""
+    p = trial.suggest_int("p", 0, 5)
+    d = trial.suggest_int("d", 0, 2)
+    q = trial.suggest_int("q", 0, 5)
+
+    try:
+        model = ARIMA(df["counseled"], order=(p, d, q))
+        result = model.fit()
+        return result.aic  # Minimize AIC
+    except:
+        return float("inf")  # Avoid crashing
 
 # P (Seasonal AutoRegressive order, SAR): Similar to p but for seasonal lags.
 # D (Seasonal Differencing order, SI): Number of times seasonal differencing is applied.
 # Q (Seasonal Moving Average order, SMA): Similar to q but for seasonal lags.
 # S (Seasonal period): The length of the seasonal cycle (e.g., S=12 for monthly data, S=7 for weekly data).
 
-# Best is trial 67 with value: 14.0.
-# Best Parameters: {'p': 0, 'd': 1, 'q': 4, 'P': 2, 'D': 1, 'Q': 0, 'S1': 365}
+# <!-- Best SARIMA Parameters: {'p': 0, 'd': 0, 'q': 1, 'P': 2, 'D': 2, 'Q': 0, 'S': 100}
+# C:\Users\analyticsteam_share\Lib\site-packages\statsmodels\tsa\base\tsa_model.py:473: ValueWarning: A date index has been provided, but it has no associated frequency information and so will be ignored when e.g. forecasting.
+#   self._init_dates(dates, freq)
 
 # 目的関数の定義
 def sarima_objective(trial):
@@ -97,20 +90,19 @@ def optuna_sarima():
 def optuna_arima():
     # Optuna で最適化
     study = optuna.create_study(direction="minimize")
-    study.optimize(sarima_objective, n_trials=100)  # 50回試行
+    study.optimize(arima_objective, n_trials=100)  # 50回試行
 
     # 最適なハイパーパラメータを取得
     best_params = study.best_params
     print("Best ARIMA Parameters:", best_params)
 
     # 最適パラメータでモデルを再学習
-    best_model = SARIMAX(df["counseled"],
+    best_model = ARIMA(df["counseled"],
                         order=(best_params["p"], best_params["d"], best_params["q"]),
-                        seasonal_order=(best_params["P"], best_params["D"], best_params["Q"], 7),
                         enforce_stationarity=False,
                         enforce_invertibility=False)
 
-    best_result = best_model.fit(disp=False)
+    best_result = best_model.fit()
     print("Best ARIMA AIC:", best_result.aic)
 
 if __name__ == "__main__":
