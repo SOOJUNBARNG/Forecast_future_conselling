@@ -65,7 +65,7 @@ def before_arima():
         "日付":"date",
     })
 
-    df = df[df["date"] > "2023-04-01"]
+    df = df[df["date"] > "2025-01-10"]
 
     df_clinic_unique = df[["clinic_id", "clinic_name"]].drop_duplicates()
 
@@ -157,7 +157,8 @@ def arima_output():
         forecast_exog = df_clinic.loc[df_clinic.index > pd.to_datetime(current_date), ["national_holiday", "clinic_holiday","day_of_week"]][:28]
 
         # Find the best ARIMA (p, d, q) with exogenous variables
-        best_p, best_d, best_q = 0, 1, 4
+        # {'p': 5, 'd': 1, 'q': 2}.
+        best_p, best_d, best_q = 5, 1, 2
         model = ARIMA(y, order=(best_p, best_d, best_q), exog=exog)
         arima_result = model.fit()
 

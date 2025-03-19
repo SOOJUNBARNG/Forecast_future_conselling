@@ -45,7 +45,7 @@ def before_sarima():
         "日付":"date",
     })
 
-    df = df[df["date"] > "2023-04-01"]
+    df = df[df["date"] > "2025-01-10"]
 
     df_clinic_unique = df[["clinic_id", "clinic_name"]].drop_duplicates()
 
@@ -117,10 +117,14 @@ def sarima_output():
     df["date"] = pd.to_datetime(df["date"])
     df.index = pd.DatetimeIndex(df.index).to_period("D")  # Daily frequency
 
+    
+    # 18 /  {'p': 5, 'd': 1, 'q': 2, 'P': 0, 'D': 0, 'Q': 1, 'S': 69}
+    # {'p': 5, 'd': 1, 'q': 2, 'P': 0, 'D': 2, 'Q': 0, 'S': 81}
+
     # Define SARIMA parameters
-    best_params = {'p': 0, 'd': 1, 'q': 4, 'P': 2, 'D': 1, 'Q': 0}
+    best_params = {'p': 5, 'd': 1, 'q': 2, 'P': 1, 'D': 2, 'Q': 0}
     p, d, q = best_params["p"], best_params["d"], best_params["q"]
-    P, D, Q, S = best_params["P"], best_params["D"], best_params["Q"], 7  # Weekly seasonality
+    P, D, Q, S = best_params["P"], best_params["D"], best_params["Q"], 30  # Weekly seasonality
 
     all_forecasts = []  # Store forecasts for all clinics
 

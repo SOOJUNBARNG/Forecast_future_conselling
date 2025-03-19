@@ -18,13 +18,6 @@ from utils.output_date import get_current_date_string, get_current_date_parts, g
 
 current_date = datetime.today().date()
 
-def get_current_plan_visit():
-    TARGET_URL = "https://metabase.medical-frontier.net/question/5810-web"
-    FILE_PATTERN = r"~/Downloads/web予約受付____予約作成日ベース　重複削除_　来院数予測_*.csv"
-    DIRECTORY = r"D:/Forecast_future_conselling/"
-    OUTPUT_FILE = rf"data/clinic_plan_visit.csv"
-    run_metabase(TARGET_URL, FILE_PATTERN, DIRECTORY, OUTPUT_FILE)
-
 
 def read_current_plan():
     # get_current_plan_visit()
