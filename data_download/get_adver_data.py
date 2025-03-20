@@ -25,20 +25,20 @@ last_day = get_last_day_of_month("current")
 _, next_month_last_day = calendar.monthrange(next_year, next_month)
 
 
+# def main():
+#     TARGET_URL = "https://metabase.medical-frontier.net/question/7652"
+#     FILE_PATTERN = r"~/Downloads/【カウンセリング予測】広告データ_*.csv"
+#     DIRECTORY = r"D:/Forecast_future_conselling/"
+#     OUTPUT_FILE = rf"data/clinic_plan_visit.csv"
+#     run_metabase(TARGET_URL, FILE_PATTERN, DIRECTORY, OUTPUT_FILE)
+
+
+
 def main():
-    TARGET_URL = "https://metabase.medical-frontier.net/question/7652"
-    FILE_PATTERN = r"~/Downloads/【カウンセリング予測】広告データ_*.csv"
+    TARGET_URL = "https://metabase.medical-frontier.net/question/7665-web"
+    FILE_PATTERN = r"~/Downloads/【カウンセリング予測】web広告データ_*.csv"
     DIRECTORY = r"D:/Forecast_future_conselling/"
-    OUTPUT_FILE = rf"data/clinic_plan_visit.csv"
-    run_metabase(TARGET_URL, FILE_PATTERN, DIRECTORY, OUTPUT_FILE)
-
-
-
-def get_current_plan_visit():
-    TARGET_URL = "https://metabase.medical-frontier.net/question/5810-web"
-    FILE_PATTERN = r"~/Downloads/web予約受付____予約作成日ベース　重複削除_　来院数予測_*.csv"
-    DIRECTORY = r"D:/Forecast_future_conselling/"
-    OUTPUT_FILE = rf"data/clinic_plan_visit.csv"
+    OUTPUT_FILE = rf"data/clinic_visit_data.csv"
     run_metabase(TARGET_URL, FILE_PATTERN, DIRECTORY, OUTPUT_FILE)
 
 if __name__ == "__main__":  # This is the correct way to check if the script is being run directly

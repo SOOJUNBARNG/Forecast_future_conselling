@@ -124,7 +124,7 @@ def sarima_output():
     # Define SARIMA parameters
     best_params = {'p': 5, 'd': 1, 'q': 2, 'P': 1, 'D': 2, 'Q': 0}
     p, d, q = best_params["p"], best_params["d"], best_params["q"]
-    P, D, Q, S = best_params["P"], best_params["D"], best_params["Q"], 30  # Weekly seasonality
+    P, D, Q, S = best_params["P"], best_params["D"], best_params["Q"], 7  # Weekly seasonality
 
     all_forecasts = []  # Store forecasts for all clinics
 
