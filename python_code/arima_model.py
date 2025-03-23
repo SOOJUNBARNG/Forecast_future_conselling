@@ -114,24 +114,24 @@ def before_arima():
         lambda row: 0 if row["tcb_holiday_flag"] is False and row["status"] is False else 1, 
         axis=1
     )
-    df_before_sarima = df_calender_rest[["clinic_id","clinic_name", "date", "national_holiday", "tcb_holiday", "counseled"]]
-    df_before_sarima = df_before_sarima.rename(columns={
+    df_before_arima = df_calender_rest[["clinic_id","clinic_name", "date", "national_holiday", "tcb_holiday", "counseled"]]
+    df_before_arima = df_before_arima.rename(columns={
         "tcb_holiday":"clinic_holiday",
         })
-    df_before_sarima["day_of_week"] = df_before_sarima["date"].dt.dayofweek
+    df_before_arima["day_of_week"] = df_before_arima["date"].dt.dayofweek
     # df_before_sarima["day_of_week"] = df_before_sarima["date"].dt.dayofweek.map(
     #     {0: "月", 1: "火", 2: "水", 3: "木", 4: "金", 5: "土", 6: "日"}
     # )
 
-    print(df_before_sarima.index[df_before_sarima.index.duplicated()])
+    print(df_before_arima.index[df_before_arima.index.duplicated()])
 
-    return df_before_sarima
+    return df_before_arima
 
 
 def arima_output():
     df = before_arima()  # Get preprocessed data
 
-    df.to_csv("nyan.csv", index=False)
+    # df.to_csv("nyan.csv", index=False)
 
     # Convert date column to datetime
     df["date"] = pd.to_datetime(df["date"])
