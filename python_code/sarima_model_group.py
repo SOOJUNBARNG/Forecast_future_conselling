@@ -126,20 +126,26 @@ def sarima_output():
 
     all_forecasts = []  # Store forecasts for all clinics
 
-
     # Set date as index
     df.set_index("date", inplace=True)
 
     # Convert holidays to binary flags
-    df[["national_holiday", "clinic_holiday"]] = df[["national_holiday", "clinic_holiday"]].applymap(lambda x: 1 if x else 0)
+    df[["national_holiday", "clinic_holiday"]] = df[
+        ["national_holiday", "clinic_holiday"]
+    ].applymap(lambda x: 1 if x else 0)
 
     # Define target variable
     y = df.loc[df.index <= pd.to_datetime(current_date), "counseled"]
 
     # Exogenous variables (holiday flags)
-    exog = df.loc[df.index <= pd.to_datetime(current_date),["national_holiday", "clinic_holiday", "day_of_week"],]
-    forecast_exog = df.loc[df.index > pd.to_datetime(current_date),["national_holiday", "clinic_holiday", "day_of_week"],][:28]
-
+    exog = df.loc[
+        df.index <= pd.to_datetime(current_date),
+        ["national_holiday", "clinic_holiday", "day_of_week"],
+    ]
+    forecast_exog = df.loc[
+        df.index > pd.to_datetime(current_date),
+        ["national_holiday", "clinic_holiday", "day_of_week"],
+    ][:28]
 
     # Check if indices match
     if not y.index.equals(exog.index):
@@ -165,9 +171,7 @@ def sarima_output():
         forecast_exog = exog.iloc[-28:].copy()
     else:
         # If there are less than 14 rows, repeat the last available rows
-        forecast_exog = pd.concat(
-            [exog.tail(1)] * (28 - len(exog)), ignore_index=True
-        )
+        forecast_exog = pd.concat([exog.tail(1)] * (28 - len(exog)), ignore_index=True)
 
     # Forecast the next 14 days
     forecast = sarima_result.get_forecast(steps=28, exog=forecast_exog)

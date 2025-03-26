@@ -115,14 +115,22 @@ def arima_output():
     df.set_index("date", inplace=True)
 
     # Convert holidays to binary flags
-    df[["national_holiday", "clinic_holiday"]] = df[["national_holiday", "clinic_holiday"]].applymap(lambda x: 1 if x else 0)
+    df[["national_holiday", "clinic_holiday"]] = df[
+        ["national_holiday", "clinic_holiday"]
+    ].applymap(lambda x: 1 if x else 0)
 
     # Define target variable
     y = df.loc[df.index <= pd.to_datetime(current_date), "counseled"]
 
     # Exogenous variables (holiday flags)
-    exog = df.loc[df.index <= pd.to_datetime(current_date),["national_holiday", "clinic_holiday", "day_of_week"],]
-    forecast_exog = df.loc[df.index > pd.to_datetime(current_date),["national_holiday", "clinic_holiday", "day_of_week"],][:28]
+    exog = df.loc[
+        df.index <= pd.to_datetime(current_date),
+        ["national_holiday", "clinic_holiday", "day_of_week"],
+    ]
+    forecast_exog = df.loc[
+        df.index > pd.to_datetime(current_date),
+        ["national_holiday", "clinic_holiday", "day_of_week"],
+    ][:28]
 
     # Find the best ARIMA (p, d, q) with exogenous variables
     # {'p': 9, 'd': 1, 'q': 10}
