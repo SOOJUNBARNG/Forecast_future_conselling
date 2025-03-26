@@ -22,8 +22,8 @@ def job():
     subprocess.run(["python", r"check_model.py"])
     time.sleep(10)
 
-
     return
+
 
 if __name__ == "__main__":
     job()

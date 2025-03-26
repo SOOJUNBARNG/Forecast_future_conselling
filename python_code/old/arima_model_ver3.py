@@ -10,24 +10,28 @@ from statsmodels.tsa.stattools import adfuller
 
 # Load the dataset
 df = pd.read_csv("../data/counseling_count.csv")
-df = df[["クリニックID","クリニック名","日付","counseled"]]
-df = df.rename(columns={
-    "クリニックID": "clinic_id",
-    "クリニック名":"clinic_name",
-    "日付":"date",
-})
+df = df[["クリニックID", "クリニック名", "日付", "counseled"]]
+df = df.rename(
+    columns={
+        "クリニックID": "clinic_id",
+        "クリニック名": "clinic_name",
+        "日付": "date",
+    }
+)
 
 calendar_df = pd.read_csv("../data/calender.csv")
 calendar_df = calendar_df[["日付", "祝日フラグ", "TCB休診フラグ"]]
-calendar_df = calendar_df.rename(columns={
-    "日付":"date",
-    "祝日フラグ":"holiday_flag",
-    "TCB休診フラグ":"tcb_holiday_flag",
-})
+calendar_df = calendar_df.rename(
+    columns={
+        "日付": "date",
+        "祝日フラグ": "holiday_flag",
+        "TCB休診フラグ": "tcb_holiday_flag",
+    }
+)
 calendar_df["date"] = pd.to_datetime(calendar_df["date"]).dt.strftime("%Y-%m-%d")
 df_calender = pd.merge(df, calendar_df, on="date", how="right")
 df_calender = df_calender.sort_values(["clinic_id", "date"], ascending=True)
-df_calender = df_calender.dropna(subset = ["clinic_id"]).reset_index()
+df_calender = df_calender.dropna(subset=["clinic_id"]).reset_index()
 # df_calender["counseled"] = df_calender["counseled"].astype(int)
 df_calender.to_csv("nyan.csv")
 
@@ -36,12 +40,16 @@ print(df_calender.head(10))
 
 rest_day_df = pd.read_csv("../data/clinic_rest_day.csv")
 rest_day_df["name"] = rest_day_df["name"] + "院"
-rest_day_df = rest_day_df.rename(columns={
-    "name":"clinic_name",
-    "close_date":"date",
-})
+rest_day_df = rest_day_df.rename(
+    columns={
+        "name": "clinic_name",
+        "close_date": "date",
+    }
+)
 
-df_calender_rest = pd.merge(df_calender, rest_day_df, on=["clinic_name", "date"], how="left")
+df_calender_rest = pd.merge(
+    df_calender, rest_day_df, on=["clinic_name", "date"], how="left"
+)
 
 # Display results
 print(df_calender_rest.columns)
@@ -66,9 +74,6 @@ print(df_calender_rest.head(10))
 # # df_rest_calender.to_csv("nyan.csv")
 
 # # df_rest_calender["tcb_holiday_flag"] = df_rest_calender["status"] | df_rest_calender["holiday_flag"].fillna(False)
-
-
-
 
 
 # # name,close_date,status
@@ -108,10 +113,10 @@ print(df_calender_rest.head(10))
 # P, D, Q, S = best_params["P"], best_params["D"], best_params["Q"], 7  # S=7 (週間の周期性)
 
 # # Define SARIMA model (p, d, q) x (P, D, Q, S)
-# model = SARIMAX(y, 
+# model = SARIMAX(y,
 #                 order=(p, d, q),
 #                 seasonal_order=(P, D, Q, S),
-#                 enforce_stationarity=False, 
+#                 enforce_stationarity=False,
 #                 enforce_invertibility=False,
 #                 exog = exog)
 
@@ -146,7 +151,7 @@ print(df_calender_rest.head(10))
 # # In-sample predictions
 # y_pred = sarima_result.predict(start=0, end=len(y)-1)
 
-# forecast_mean = forecast_mean.apply(lambda x: int(x)) 
+# forecast_mean = forecast_mean.apply(lambda x: int(x))
 
 # # **予測データを CSV に保存**
 # forecast_df = pd.DataFrame({
@@ -163,4 +168,3 @@ print(df_calender_rest.head(10))
 
 # print(f"MAE: {mae:.2f}")
 # print(f"RMSE: {rmse:.2f}")
-

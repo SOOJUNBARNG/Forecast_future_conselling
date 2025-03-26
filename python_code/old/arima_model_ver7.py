@@ -19,7 +19,9 @@ current_date = datetime.today().date()
 def plot_result(y, forecast, clinic_id):
 
     # Get confidence intervals
-    forecast_index = pd.date_range(start=y.index[-1] + pd.Timedelta(days=1), periods=14, freq="D")
+    forecast_index = pd.date_range(
+        start=y.index[-1] + pd.Timedelta(days=1), periods=14, freq="D"
+    )
     forecast_mean = forecast.predicted_mean.astype(int)
     forecast_ci = forecast.conf_int()
     forecast_top = forecast_ci.iloc[:, 1].astype(int)
@@ -28,7 +30,9 @@ def plot_result(y, forecast, clinic_id):
     plt.figure(figsize=(12, 6))
     plt.plot(y, label="Actual", color="blue")
     plt.plot(forecast_index, forecast_mean, label="Forecast", color="red")
-    plt.fill_between(forecast_index, forecast_bot, forecast_top, color="pink", alpha=0.3)
+    plt.fill_between(
+        forecast_index, forecast_bot, forecast_top, color="pink", alpha=0.3
+    )
     plt.xlabel("Date")
     plt.ylabel("Counseled")
     plt.title(f"SARIMA Forecast for Clinic {clinic_id}")
@@ -41,7 +45,7 @@ def find_best_arima_params(y, p_range=(0, 3), d_range=(0, 2), q_range=(0, 3)):
     """Find the best (p, d, q) for ARIMA using AIC."""
     best_aic = float("inf")
     best_params = None
-    
+
     for p, d, q in itertools.product(range(*p_range), range(*d_range), range(*q_range)):
         try:
             model = ARIMA(y, order=(p, d, q))
@@ -51,18 +55,21 @@ def find_best_arima_params(y, p_range=(0, 3), d_range=(0, 2), q_range=(0, 3)):
                 best_params = (p, d, q)
         except:
             continue  # Skip invalid models
-    
+
     return best_params
+
 
 def before_arima():
     # Load the dataset
     df = pd.read_csv("../data/counseling_count.csv")
-    df = df[["クリニックID","クリニック名","日付","counseled"]]
-    df = df.rename(columns={
-        "クリニックID": "clinic_id",
-        "クリニック名":"clinic_name",
-        "日付":"date",
-    })
+    df = df[["クリニックID", "クリニック名", "日付", "counseled"]]
+    df = df.rename(
+        columns={
+            "クリニックID": "clinic_id",
+            "クリニック名": "clinic_name",
+            "日付": "date",
+        }
+    )
 
     df = df[df["date"] > "2023-04-01"]
 
@@ -70,30 +77,37 @@ def before_arima():
 
     calendar_df = pd.read_csv("../data/calender.csv")
     calendar_df = calendar_df[["日付", "祝日フラグ", "TCB休診フラグ"]]
-    calendar_df = calendar_df.rename(columns={
-        "日付":"date",
-        "祝日フラグ":"holiday_flag",
-        "TCB休診フラグ":"tcb_holiday_flag",
-    })
+    calendar_df = calendar_df.rename(
+        columns={
+            "日付": "date",
+            "祝日フラグ": "holiday_flag",
+            "TCB休診フラグ": "tcb_holiday_flag",
+        }
+    )
     calendar_df["date"] = pd.to_datetime(calendar_df["date"]).dt.strftime("%Y-%m-%d")
     cross_df = df_clinic_unique.merge(calendar_df, how="cross")
 
-    cross_df_counsel = cross_df.merge(df, on=["clinic_id", "clinic_name", "date"], how="left")
+    cross_df_counsel = cross_df.merge(
+        df, on=["clinic_id", "clinic_name", "date"], how="left"
+    )
     cross_df_counsel["counseled"] = cross_df_counsel["counseled"].fillna(0)
 
     # Display results
     print(cross_df_counsel.columns)
     print(cross_df_counsel.head(10))
 
-
     rest_day_df = pd.read_csv("../data/clinic_rest_day.csv")
     rest_day_df["name"] = rest_day_df["name"] + "院"
-    rest_day_df = rest_day_df.rename(columns={
-        "name":"clinic_name",
-        "close_date":"date",
-    })
+    rest_day_df = rest_day_df.rename(
+        columns={
+            "name": "clinic_name",
+            "close_date": "date",
+        }
+    )
 
-    df_calender_rest = pd.merge(cross_df_counsel, rest_day_df, on=["clinic_name", "date"], how="left")
+    df_calender_rest = pd.merge(
+        cross_df_counsel, rest_day_df, on=["clinic_name", "date"], how="left"
+    )
     df_calender_rest["status"] = df_calender_rest["status"].fillna(False)
 
     df_calender_rest.to_csv("wow.csv", index=False)
@@ -101,19 +115,33 @@ def before_arima():
     # Convert the date column to datetime format
     df_calender_rest["date"] = pd.to_datetime(df_calender_rest["date"])
     df_calender_rest = df_calender_rest[
-        (df_calender_rest["date"] >= pd.Timestamp("2023-04-01")) &
+        (df_calender_rest["date"] >= pd.Timestamp("2023-04-01"))
+        &
         # (df_calender_rest["date"] <= pd.Timestamp(current_date) + pd.Timedelta(days=14))
         (df_calender_rest["date"] <= pd.Timestamp("2025-02-09") + pd.Timedelta(days=14))
     ]
 
     df_calender_rest = df_calender_rest.reset_index()
 
-    df_calender_rest["national_holiday"] = df_calender_rest["holiday_flag"].apply(lambda x: 0 if x is False else 1)
-    df_calender_rest["tcb_holiday"] = df_calender_rest.apply(
-        lambda row: 0 if row["tcb_holiday_flag"] is False and row["status"] is False else 1, 
-        axis=1
+    df_calender_rest["national_holiday"] = df_calender_rest["holiday_flag"].apply(
+        lambda x: 0 if x is False else 1
     )
-    df_before_arima = df_calender_rest[["clinic_id","clinic_name", "date", "national_holiday", "tcb_holiday", "counseled"]]
+    df_calender_rest["tcb_holiday"] = df_calender_rest.apply(
+        lambda row: (
+            0 if row["tcb_holiday_flag"] is False and row["status"] is False else 1
+        ),
+        axis=1,
+    )
+    df_before_arima = df_calender_rest[
+        [
+            "clinic_id",
+            "clinic_name",
+            "date",
+            "national_holiday",
+            "tcb_holiday",
+            "counseled",
+        ]
+    ]
 
     print(df_before_arima.columns)
     print(df_before_arima.head(10))
@@ -130,7 +158,6 @@ def arima_output():
     df["date"] = pd.to_datetime(df["date"])
 
     # Define ARIMA parameters
-    
 
     all_forecasts = []  # Store forecasts for all clinics
 
@@ -142,7 +169,9 @@ def arima_output():
         df_clinic.set_index("date", inplace=True)
 
         # Convert holidays to binary flags
-        df_clinic[["national_holiday", "tcb_holiday"]] = df_clinic[["national_holiday", "tcb_holiday"]].applymap(lambda x: 1 if x else 0)
+        df_clinic[["national_holiday", "tcb_holiday"]] = df_clinic[
+            ["national_holiday", "tcb_holiday"]
+        ].applymap(lambda x: 1 if x else 0)
 
         # Define target variable
         y = df_clinic.loc[df_clinic.index <= pd.Timestamp("2025-02-09"), "counseled"]
@@ -159,24 +188,28 @@ def arima_output():
         forecast = arima_result.get_forecast(steps=14)
 
         # Get confidence intervals
-        forecast_index = pd.date_range(start=y.index[-1] + pd.Timedelta(days=1), periods=14, freq="D")
+        forecast_index = pd.date_range(
+            start=y.index[-1] + pd.Timedelta(days=1), periods=14, freq="D"
+        )
         forecast_mean = forecast.predicted_mean.astype(int)
         forecast_ci = forecast.conf_int()
         forecast_top = forecast_ci.iloc[:, 1].astype(int)
         forecast_bot = forecast_ci.iloc[:, 0].astype(int)
 
         # Store forecast results
-        forecast_df = pd.DataFrame({
-            "clinic_id": clinic_id,
-            "Date": forecast_index,
-            "Forecast": forecast_mean,
-            "Forecast 95% Top": forecast_top,
-            "Forecast 95% Bot": forecast_bot
-        })
+        forecast_df = pd.DataFrame(
+            {
+                "clinic_id": clinic_id,
+                "Date": forecast_index,
+                "Forecast": forecast_mean,
+                "Forecast 95% Top": forecast_top,
+                "Forecast 95% Bot": forecast_bot,
+            }
+        )
         all_forecasts.append(forecast_df)
 
         # In-sample predictions
-        y_pred = arima_result.predict(start=0, end=len(y)-1)
+        y_pred = arima_result.predict(start=0, end=len(y) - 1)
 
         # Calculate errors
         mae = mean_absolute_error(y, y_pred)
@@ -188,16 +221,18 @@ def arima_output():
     final_forecast_df.to_csv("../data/arima_forecast_all_clinics.csv", index=False)
 
     # Group forecast by Date and sum the forecast values
-    group_forecast = final_forecast_df.groupby("Date").agg({
-        "Forecast": "sum",
-        "Forecast 95% Top": "sum",
-        "Forecast 95% Bot": "sum"
-    }).reset_index()
+    group_forecast = (
+        final_forecast_df.groupby("Date")
+        .agg({"Forecast": "sum", "Forecast 95% Top": "sum", "Forecast 95% Bot": "sum"})
+        .reset_index()
+    )
 
     group_forecast.to_csv("../data/arima_forecast.csv", index=False)
 
+
 def main():
     arima_output()
+
 
 if __name__ == "__main__":
     main()

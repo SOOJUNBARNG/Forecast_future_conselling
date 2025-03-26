@@ -1,15 +1,15 @@
 # データ操作ライブラリ
-import itertools
-import numpy as np
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 
 # 統計ライブラリ
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.tsa.stattools import adfuller
 
 # 時間関連ライブラリ
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Get the current date
 start_data = "2024-01-10"
@@ -22,7 +22,7 @@ def plot_result(y, forecast, clinic_id):
 
     # Get confidence intervals
     forecast_index = pd.date_range(
-        start=y.index[-1] + pd.Timedelta(days=1), periods=28, freq="D"
+        start=y.index[-1] + pd.Timedelta(days=1), periods=14, freq="D"
     )
     forecast_mean = forecast.predicted_mean.astype(int)
     forecast_ci = forecast.conf_int()
@@ -43,7 +43,7 @@ def plot_result(y, forecast, clinic_id):
     plt.show()
 
 
-def before_arima():
+def before_sarima():
     # Load the dataset
     df = pd.read_csv("../data/counseling_count_group.csv")
     df = df[["日付", "counseled"]]
@@ -102,14 +102,30 @@ def before_arima():
     return data_process
 
 
-def arima_output():
-    df = before_arima()  # Get preprocessed data
+def sarima_output():
+    df = before_sarima()  # Get preprocessed data
+
+    # df.to_csv("check_for_normal.csv", index=False)
 
     # Convert date column to datetime
     df["date"] = pd.to_datetime(df["date"])
+    df.index = pd.DatetimeIndex(df.index).to_period("D")  # Daily frequency
 
-    # Define ARIMA parameters
+    # 18 /  {'p': 5, 'd': 1, 'q': 2, 'P': 0, 'D': 0, 'Q': 1, 'S': 69}
+    # {'p': 5, 'd': 1, 'q': 2, 'P': 0, 'D': 2, 'Q': 0, 'S': 81}
+
+    # Define SARIMA parameters
+    best_params = {"p": 9, "d": 1, "q": 10, "P": 0, "D": 1, "Q": 2, "S": 365}
+    p, d, q = best_params["p"], best_params["d"], best_params["q"]
+    P, D, Q, S = (
+        best_params["P"],
+        best_params["D"],
+        best_params["Q"],
+        best_params["S"],
+    )  # Yearly seasonality
+
     all_forecasts = []  # Store forecasts for all clinics
+
 
     # Set date as index
     df.set_index("date", inplace=True)
@@ -124,19 +140,37 @@ def arima_output():
     exog = df.loc[df.index <= pd.to_datetime(current_date),["national_holiday", "clinic_holiday", "day_of_week"],]
     forecast_exog = df.loc[df.index > pd.to_datetime(current_date),["national_holiday", "clinic_holiday", "day_of_week"],][:28]
 
-    # Find the best ARIMA (p, d, q) with exogenous variables
-    # {'p': 9, 'd': 1, 'q': 10}
-    best_p, best_d, best_q = 9, 1, 10
-    model = ARIMA(y, order=(best_p, best_d, best_q), exog=exog)
-    arima_result = model.fit()
+
+    # Check if indices match
+    if not y.index.equals(exog.index):
+        print("Warning: Indices do not match between y and exog.")
+
+    # Proceed with SARIMAX model fitting
+    model = SARIMAX(
+        y,
+        order=(p, d, q),
+        seasonal_order=(P, D, Q, S),
+        enforce_stationarity=False,
+        enforce_invertibility=False,
+        exog=exog,
+    )
+    sarima_result = model.fit()
 
     # Print model summary
-    # print(arima_result.summary())
+    print(sarima_result.summary())
 
-    # Forecast next 28 days
-    forecast = arima_result.get_forecast(steps=28, exog=forecast_exog)
-    # print(forecast.summary())
-    # print(forecast.columns)
+    # Forecast next 14 days
+    # Prepare forecast_exog for the next 14 days
+    if len(exog) >= 28:
+        forecast_exog = exog.iloc[-28:].copy()
+    else:
+        # If there are less than 14 rows, repeat the last available rows
+        forecast_exog = pd.concat(
+            [exog.tail(1)] * (28 - len(exog)), ignore_index=True
+        )
+
+    # Forecast the next 14 days
+    forecast = sarima_result.get_forecast(steps=28, exog=forecast_exog)
 
     # Get confidence intervals
     forecast_index = pd.date_range(
@@ -144,18 +178,14 @@ def arima_output():
     )
     forecast_mean = forecast.predicted_mean.astype(int)
     forecast_ci = forecast.conf_int()
-    forecast_top = (
-        forecast_ci.iloc[:, 1].fillna(0).replace([np.inf, -np.inf], 0).astype(int)
-    )
-    forecast_bot = (
-        forecast_ci.iloc[:, 0].fillna(0).replace([np.inf, -np.inf], 0).astype(int)
-    )
+    forecast_top = forecast_ci.iloc[:, 1].astype(int)
+    forecast_bot = forecast_ci.iloc[:, 0].astype(int)
 
     # Store forecast results
     forecast_df = pd.DataFrame(
         {
             "Date": forecast_index,
-            "Forecast": (forecast_top + forecast_bot) / 2,
+            "Forecast": forecast_mean,
             "Forecast 95% Top": forecast_top,
             "Forecast 95% Bot": forecast_bot,
         }
@@ -163,16 +193,19 @@ def arima_output():
     all_forecasts.append(forecast_df)
 
     # In-sample predictions
-    y_pred = arima_result.predict(start=0, end=len(y) - 1)
+    y_pred = sarima_result.predict(start=0, end=len(y) - 1)
 
     # Calculate errors
     mae = mean_absolute_error(y, y_pred)
     rmse = np.sqrt(mean_squared_error(y, y_pred))
     print(f"MAE: {mae:.2f}, RMSE: {rmse:.2f}")
 
+    # print
+    # plot_result(y, forecast, clinic_id)
+
     # Save all forecasts to a single CSV
     final_forecast_df = pd.concat(all_forecasts, ignore_index=True)
-    final_forecast_df.to_csv("../data/arima_forecast_all_clinics.csv", index=False)
+    final_forecast_df.to_csv("../data/sarima_forecast_all_clinics.csv", index=False)
 
     # Group forecast by Date and sum the forecast values
     group_forecast = (
@@ -181,11 +214,11 @@ def arima_output():
         .reset_index()
     )
 
-    group_forecast.to_csv("../data/arima_forecast_group.csv", index=False)
+    group_forecast.to_csv("../data/sarima_forecast_group.csv", index=False)
 
 
 def main():
-    arima_output()
+    sarima_output()
 
 
 if __name__ == "__main__":
