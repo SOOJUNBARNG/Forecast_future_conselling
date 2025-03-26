@@ -22,6 +22,15 @@ df.set_index("日付", inplace=True)
 
 current_date = pd.to_datetime(datetime.today().date())
 
+def get_nth_week_of_month(date):
+    first_day_of_month = date.replace(day=1)
+    first_weekday = first_day_of_month.weekday()  # Monday = 0, Sunday = 6
+    current_weekday = date.weekday()
+    
+    # Calculate the nth week of the month
+    nth_week = (date.day + first_weekday) // 7 + 1
+    return nth_week
+
 
 def data_process():
     # Load the dataset
@@ -68,13 +77,15 @@ def data_process():
             "tcb_holiday": "clinic_holiday",
         }
     )
-    data_process["day_of_week"] = data_process["date"].dt.dayofweek
+    data_process["day"] = data_process["date"].dt.dayofweek
     # df_before_sarima["day_of_week"] = df_before_sarima["date"].dt.dayofweek.map(
     #     {0: "月", 1: "火", 2: "水", 3: "木", 4: "金", 5: "土", 6: "日"}
     # )
-    data_process["day_of_week"] = data_process.apply(
-        lambda x: 5 if x["national_holiday"] == 1 else x["day_of_week"], axis=1
+    data_process["week_of_month"] = data_process["date"].apply(lambda x: get_nth_week_of_month(x))
+    data_process["day"] = data_process.apply(
+        lambda x: 5 if x["national_holiday"] == 1 else x["day"], axis=1
     )
+
     data_process = data_process[data_process["date"] >= pd.Timestamp(f"{start_data}")]
 
     print(data_process.index[data_process.index.duplicated()])
@@ -85,9 +96,9 @@ def data_process():
 def arima_objective(trial):
     """Objective function for Optuna optimization."""
     # {'p': 9, 'd': 1, 'q': 10}
-    p = trial.suggest_int("p", 0, 10)
+    p = trial.suggest_int("p", 8, 10)
     d = trial.suggest_int("d", 0, 2)
-    q = trial.suggest_int("q", 0, 10)
+    q = trial.suggest_int("q", 8, 10)
 
     data_process_df = pd.DataFrame(data_process())
     print(data_process_df.columns)
@@ -106,7 +117,7 @@ def arima_objective(trial):
     # Exogenous variables (holiday flags)
     exog = df_exog.loc[
         df_exog.index <= current_date,
-        ["national_holiday", "clinic_holiday", "day_of_week"],
+        ["national_holiday", "clinic_holiday", "day", "week_of_month"],
     ]
 
     try:
@@ -126,7 +137,7 @@ def arima_objective(trial):
 def optuna_arima():
     # Optuna で最適化
     study = optuna.create_study(direction="minimize")
-    study.optimize(arima_objective, n_trials=300)  # 50回試行
+    study.optimize(arima_objective, n_trials=30)  # 50回試行
 
     # 最適なハイパーパラメータを取得
     best_params = study.best_params
@@ -149,7 +160,7 @@ def optuna_arima():
     # Exogenous variables (holiday flags)
     exog = df_exog.loc[
         df_exog.index <= current_date,
-        ["national_holiday", "clinic_holiday", "day_of_week"],
+        ["national_holiday", "clinic_holiday", "day", "week_of_month"],
     ]
 
     best_model = ARIMA(
@@ -170,16 +181,16 @@ def optuna_arima():
 def sarima_objective(trial):
     # Non-seasonal parameters
     # {'p': 5, 'd': 1, 'q': 2}.
-    p = trial.suggest_int("p", 9, 9)  # Increased range
-    d = trial.suggest_int("d", 1, 1)
-    q = trial.suggest_int("q", 10, 10)  # Increased range
+    p = trial.suggest_int("p", 0, 5)  # Increased range
+    d = trial.suggest_int("d", 0, 2)
+    q = trial.suggest_int("q", 0, 5)  # Increased range
 
     # Seasonal parameters
-    P = trial.suggest_int("P", 0, 10)  # Increased range
+    P = trial.suggest_int("P", 0, 5)  # Increased range
     D = trial.suggest_int("D", 0, 2)
-    Q = trial.suggest_int("Q", 0, 10)  # Increased range
+    Q = trial.suggest_int("Q", 0, 5)  # Increased range
     # S = trial.suggest_int("S", 0, 100)  # Weekly, Monthly, Yearly
-    S = trial.suggest_categorical("S", [365])  # Weekly or monthly seasonality
+    S = trial.suggest_categorical("S", [7])  # Weekly or monthly seasonality
 
     data_process_df = pd.DataFrame(data_process())
     print(data_process_df.columns)
@@ -264,5 +275,5 @@ def optuna_sarima():
 
 
 if __name__ == "__main__":
-    # print(optuna_arima())
-    print(optuna_sarima())
+    print(optuna_arima())
+    # print(optuna_sarima())

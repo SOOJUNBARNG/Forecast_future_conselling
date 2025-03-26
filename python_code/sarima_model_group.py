@@ -105,7 +105,7 @@ def before_sarima():
 def sarima_output():
     df = before_sarima()  # Get preprocessed data
 
-    # df.to_csv("check_for_normal.csv", index=False)
+    df.to_csv("check_for_normal.csv", index=False)
 
     # Convert date column to datetime
     df["date"] = pd.to_datetime(df["date"])
@@ -156,9 +156,9 @@ def sarima_output():
         y,
         order=(p, d, q),
         seasonal_order=(P, D, Q, S),
+        exog=exog,
         enforce_stationarity=False,
         enforce_invertibility=False,
-        exog=exog,
     )
     sarima_result = model.fit()
 

@@ -17,6 +17,15 @@ start_data = pd.to_datetime(start_data)
 current_date = pd.to_datetime(datetime.today().date())
 current_date = pd.to_datetime("2025-03-01")
 
+def get_nth_week_of_month(date):
+    first_day_of_month = date.replace(day=1)
+    first_weekday = first_day_of_month.weekday()  # Monday = 0, Sunday = 6
+    current_weekday = date.weekday()
+    
+    # Calculate the nth week of the month
+    nth_week = (date.day + first_weekday) // 7 + 1
+    return nth_week
+
 
 def plot_result(y, forecast, clinic_id):
 
@@ -88,9 +97,10 @@ def before_arima():
             "tcb_holiday": "clinic_holiday",
         }
     )
-    data_process["day_of_week"] = data_process["date"].dt.dayofweek
-    data_process["day_of_week"] = data_process.apply(
-        lambda x: 5 if x["national_holiday"] == 1 else x["day_of_week"], axis=1
+    data_process["day"] = data_process["date"].dt.dayofweek
+    data_process["week_of_month"] = data_process["date"].apply(lambda x: get_nth_week_of_month(x))
+    data_process["day"] = data_process.apply(
+        lambda x: 5 if x["national_holiday"] == 1 else x["day"], axis=1
     )
     # df_before_sarima["day_of_week"] = df_before_sarima["date"].dt.dayofweek.map(
     #     {0: "月", 1: "火", 2: "水", 3: "木", 4: "金", 5: "土", 6: "日"}
@@ -104,7 +114,7 @@ def before_arima():
 
 def arima_output():
     df = before_arima()  # Get preprocessed data
-
+    df.to_csv("hello.csv")
     # Convert date column to datetime
     df["date"] = pd.to_datetime(df["date"])
 
@@ -125,15 +135,17 @@ def arima_output():
     # Exogenous variables (holiday flags)
     exog = df.loc[
         df.index <= pd.to_datetime(current_date),
-        ["national_holiday", "clinic_holiday", "day_of_week"],
+        ["national_holiday", "clinic_holiday", "day", "week_of_month"],
     ]
     forecast_exog = df.loc[
         df.index > pd.to_datetime(current_date),
-        ["national_holiday", "clinic_holiday", "day_of_week"],
+        ["national_holiday", "clinic_holiday", "day", "week_of_month"],
     ][:28]
 
     # Find the best ARIMA (p, d, q) with exogenous variables
-    # {'p': 9, 'd': 1, 'q': 10}
+    # {'p': 9, 'd': 1, 'q': 10} MAE: 146.07, RMSE: 222.10 今までベスト  
+    #  5, 0, 5 / MAE: 209.59, RMSE: 271.63 / あいまい
+    # 'p': 8, 'd': 0, 'q': 10 / MAE: 142.53, RMSE: 219.06
     best_p, best_d, best_q = 9, 1, 10
     model = ARIMA(y, order=(best_p, best_d, best_q), exog=exog)
     arima_result = model.fit()
