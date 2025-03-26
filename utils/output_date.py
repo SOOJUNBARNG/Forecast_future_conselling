@@ -73,7 +73,15 @@ def get_next_month_youbi():
         day_of_week = target_datetime.strftime("%A")
 
         # Map English day to Japanese
-        japanese_days = {"Monday": "月", "Tuesday": "火", "Wednesday": "水", "Thursday": "木", "Friday": "金", "Saturday": "土", "Sunday": "日"}
+        japanese_days = {
+            "Monday": "月",
+            "Tuesday": "火",
+            "Wednesday": "水",
+            "Thursday": "木",
+            "Friday": "金",
+            "Saturday": "土",
+            "Sunday": "日",
+        }
         next_month_youbi.append(japanese_days[day_of_week])
 
     return next_month_youbi

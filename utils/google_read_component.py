@@ -38,7 +38,9 @@ def connect_gspread(json, key, worksheet_name):
         return None  # Or you can add logic to create a new sheet if needed
 
 
-def read_data_in_googlespread_sheet(json, sheet_key, worksheet_name, header_row=None, data_start_row=None):
+def read_data_in_googlespread_sheet(
+    json, sheet_key, worksheet_name, header_row=None, data_start_row=None
+):
     """
     Reads data from Google Sheets and converts it into a DataFrame.
 
@@ -67,8 +69,12 @@ def read_data_in_googlespread_sheet(json, sheet_key, worksheet_name, header_row=
         data_start_row = 1
 
     # Adjust for custom header and data start points
-    headers = data[header_row]  # The header starts from `header_row`, adjusted for 0-based index
-    values = data[data_start_row:]  # The data starts from `data_start_row`, adjusted for 0-based index
+    headers = data[
+        header_row
+    ]  # The header starts from `header_row`, adjusted for 0-based index
+    values = data[
+        data_start_row:
+    ]  # The data starts from `data_start_row`, adjusted for 0-based index
 
     # Convert to DataFrame
     df = pd.DataFrame(values, columns=headers)
@@ -76,7 +82,9 @@ def read_data_in_googlespread_sheet(json, sheet_key, worksheet_name, header_row=
     return df
 
 
-def put_data_into_googlespread_sheet(df, json, sheet_key, worksheet_name, next_month_youbi):
+def put_data_into_googlespread_sheet(
+    df, json, sheet_key, worksheet_name, next_month_youbi
+):
     # print("Connecting to Google Sheets...")
 
     time.sleep(5)
@@ -86,12 +94,20 @@ def put_data_into_googlespread_sheet(df, json, sheet_key, worksheet_name, next_m
 
     # Convert the DataFrame to a list of lists
     header = df.columns.tolist()  # Get header row
-    next_month_youbi_row = ["", "", "", "", ""] + next_month_youbi  # Add two blank columns for "Clinic" and "Staff Name"
+    next_month_youbi_row = [
+        "",
+        "",
+        "",
+        "",
+        "",
+    ] + next_month_youbi  # Add two blank columns for "Clinic" and "Staff Name"
     df_values = [header] + [next_month_youbi_row] + df.values.tolist()
 
     # Calculate the number of columns and construct the cell range
     num_columns = df.shape[1]
     last_column_letter = column_letter(num_columns)  # Get the last column letter
-    cell_range = f"A1:{last_column_letter}{len(df) + 2}"  # Calculate the range to update
+    cell_range = (
+        f"A1:{last_column_letter}{len(df) + 2}"  # Calculate the range to update
+    )
 
     ws.update(cell_range, df_values)

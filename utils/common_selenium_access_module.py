@@ -44,11 +44,15 @@ def run_metabase(TARGET_URL, FILE_PATTERN, DIRECTORY, OUTPUT_FILE):
         wait = WebDriverWait(driver, 10)
 
         # Locate the id input field inside the form
-        input_id_field = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="2"]')))
+        input_id_field = wait.until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="2"]'))
+        )
         input_id_field.send_keys(f"{ID}")
 
         # Locate the password input field inside the form
-        pw_input = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="3"]')))
+        pw_input = wait.until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="3"]'))
+        )
         pw_input.send_keys(f"{PW}")
 
         time.sleep(3)
@@ -82,21 +86,27 @@ def run_metabase(TARGET_URL, FILE_PATTERN, DIRECTORY, OUTPUT_FILE):
         time.sleep(50)
         xpath_options = [
             '//*[@id="root"]/div/div/main/div/div/div[2]/main/div[3]/div/div[2]/button/div/div',
-            '//*[@id="root"]/div/div/main/div/div/div[2]/main/div[3]/div/div[3]/button/div/div'
+            '//*[@id="root"]/div/div/main/div/div/div[2]/main/div[3]/div/div[3]/button/div/div',
         ]
 
         for xpath in xpath_options:
             try:
-                element_to_click = wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
+                element_to_click = wait.until(
+                    EC.element_to_be_clickable((By.XPATH, xpath))
+                )
                 element_to_click.click()
                 break  # Exit loop if click is successful
             except (TimeoutException, NoSuchElementException):
-                continue  # Try the next XPath if the current one fails     
+                continue  # Try the next XPath if the current one fails
 
         for tippy_id in ["14", "13", "15", "16"]:
             try:
-                csv_button_xpath = f'//*[@id="tippy-{tippy_id}"]/div/div/div/div/div/button[1]/div'
-                element_to_click = wait.until(EC.element_to_be_clickable((By.XPATH, csv_button_xpath)))
+                csv_button_xpath = (
+                    f'//*[@id="tippy-{tippy_id}"]/div/div/div/div/div/button[1]/div'
+                )
+                element_to_click = wait.until(
+                    EC.element_to_be_clickable((By.XPATH, csv_button_xpath))
+                )
                 element_to_click.click()
                 time.sleep(50)  # Allow file download
                 break  # Exit loop once the click is successful
@@ -132,7 +142,9 @@ def run_metabase(TARGET_URL, FILE_PATTERN, DIRECTORY, OUTPUT_FILE):
 
 
 def main(TARGET_URL, FILE_PATTERN, DIRECTORY, OUTPUT_FILE):
-    run_metabase(TARGET_URL, FILE_PATTERN, DIRECTORY, OUTPUT_FILE)  # Calling the run_metabase function within main()
+    run_metabase(
+        TARGET_URL, FILE_PATTERN, DIRECTORY, OUTPUT_FILE
+    )  # Calling the run_metabase function within main()
 
 
 # if __name__ == "__main__":

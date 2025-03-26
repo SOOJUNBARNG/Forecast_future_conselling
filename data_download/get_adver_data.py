@@ -11,7 +11,12 @@ sys.path.append(str(project_root))
 
 # get utils
 from utils.common_selenium_access_module import run_metabase  # noqa: E402, F401
-from utils.output_date import get_current_date_string, get_current_date_parts, get_last_day_of_month, get_next_month_details  # noqa: E402, F401
+from utils.output_date import (
+    get_current_date_string,
+    get_current_date_parts,
+    get_last_day_of_month,
+    get_next_month_details,
+)  # noqa: E402, F401
 
 # Usage
 date_string = get_current_date_string()  # Current date in YYYYMMDD format
@@ -33,7 +38,6 @@ _, next_month_last_day = calendar.monthrange(next_year, next_month)
 #     run_metabase(TARGET_URL, FILE_PATTERN, DIRECTORY, OUTPUT_FILE)
 
 
-
 def main():
     TARGET_URL = "https://metabase.medical-frontier.net/question/7665-web"
     FILE_PATTERN = r"~/Downloads/【カウンセリング予測】web広告データ_*.csv"
@@ -41,5 +45,8 @@ def main():
     OUTPUT_FILE = rf"data/clinic_visit_data.csv"
     run_metabase(TARGET_URL, FILE_PATTERN, DIRECTORY, OUTPUT_FILE)
 
-if __name__ == "__main__":  # This is the correct way to check if the script is being run directly
+
+if (
+    __name__ == "__main__"
+):  # This is the correct way to check if the script is being run directly
     main()

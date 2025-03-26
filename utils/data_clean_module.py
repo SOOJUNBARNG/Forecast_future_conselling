@@ -20,7 +20,9 @@ def df_clean(df, chunk_size=1000):
                 .replace(r"\n", "")  # Remove literal newline characters
                 .replace(" ", "")  # Remove regular spaces
                 .replace(r"\s+", "")  # Remove any whitespace characters
-                .replace(r"\n\d\s+", "")  # Remove specific pattern (e.g., newlines followed by digits and spaces)
+                .replace(
+                    r"\n\d\s+", ""
+                )  # Remove specific pattern (e.g., newlines followed by digits and spaces)
                 .replace("★", "")  # Remove specific character (★)
                 .replace("\t", "")  # Remove tab characters
                 if isinstance(x, str)
@@ -39,7 +41,9 @@ def df_job_clean(df, Job):
     cols[:2] = ["Date", "Day"]
     df.columns = cols  # Assign back to DataFrame
 
-    df = pd.melt(df, id_vars=["Date", "Day"], var_name="Clinic_name", value_name="Required_count")
+    df = pd.melt(
+        df, id_vars=["Date", "Day"], var_name="Clinic_name", value_name="Required_count"
+    )
 
     df["Job"] = Job
 
@@ -56,8 +60,13 @@ def parse_date(x):
 
 
 def format_date(df, date_column, next_year, next_month, date_format="%Y%m%d"):
-    df[date_column] = pd.to_datetime(df[date_column], format=date_format, errors="coerce")
-    df = df[(df[date_column].dt.year == next_year) & (df[date_column].dt.month == next_month)]
+    df[date_column] = pd.to_datetime(
+        df[date_column], format=date_format, errors="coerce"
+    )
+    df = df[
+        (df[date_column].dt.year == next_year)
+        & (df[date_column].dt.month == next_month)
+    ]
     df[date_column] = df[date_column].dt.day  # Keep only the day
     return df
 
