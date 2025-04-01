@@ -8,3 +8,8 @@ from .output_date import (
     get_last_day_of_month,
     get_next_month_details,
 )
+from .data_pre_process import (
+    data_process_by_clinic
+    , data_process_group
+)
+from .print_output_in_matplotlib import plot_result
