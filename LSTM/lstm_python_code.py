@@ -57,7 +57,9 @@ def prepare_lstm_data(df, look_back=7):
     print(X.shape, X.size)
 
     # LSTMの入力形式に変換（[サンプル数, タイムステップ, 特徴量数]）
-    X = X.reshape((X.shape[0], look_back, -1))
+    global look_back_count
+    look_back_count = look_back + len(feature_cols)
+    X = X.reshape((X.shape[0], look_back_count, -1))
 
     return X, y, scaler, df.index
 
@@ -76,11 +78,6 @@ def build_lstm_model(input_shape):
 # 予測処理
 def lstm_forecast():
     df = pd.read_csv("../data/counseling_count_group.csv")
-    # df = df.rename(columns={
-    #     "日付": "date"
-    #     }
-    # )
-
     # データの準備
     look_back = 7  # 過去7日間を使用
     X, y, scaler, date_index = prepare_lstm_data(df, look_back)
@@ -107,7 +104,7 @@ def lstm_forecast():
 
     # 未来の28日間を予測
     forecast = []
-    last_data = X_test[-1].reshape(1, look_back, -1)  # 直近のデータ
+    last_data = X_test[-1].reshape(1, look_back_count, -1)  # 直近のデータ
 
     for _ in range(28):
         next_pred = model.predict(last_data)[0, 0]  # 予測値
