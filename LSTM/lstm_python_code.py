@@ -7,9 +7,32 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import matplotlib.pyplot as plt
 
+# 時間関連ライブラリ
+from datetime import datetime, timedelta
+
+# UTILSから取るやつ
+import sys
+from pathlib import Path
+
+# プロジェクトルートを `sys.path` に追加
+project_root = Path(__file__).resolve().parents[1]
+sys.path.append(str(project_root))
+
+from utils.print_output_in_matplotlib import plot_result
+from utils.data_pre_process import data_process_group
+
+# Get the current date
+start_data = "2024-01-10"
+start_data = pd.to_datetime(start_data)
+current_date = pd.to_datetime(datetime.today().date())
+current_date = pd.to_datetime("2025-03-01")
+data_start_date = pd.to_datetime(f"{start_data}")
+
 # データの前処理
 def prepare_lstm_data(df, look_back=7):
     """LSTM用に時系列データを準備"""
+    df = data_process_group(df, data_start_date, current_date)
+
     df["date"] = pd.to_datetime(df["date"])
     df.set_index("date", inplace=True)
 
@@ -31,6 +54,7 @@ def prepare_lstm_data(df, look_back=7):
     # データを0-1にスケーリング
     scaler = MinMaxScaler(feature_range=(0, 1))
     X = scaler.fit_transform(X)
+    print(X.shape, X.size)
 
     # LSTMの入力形式に変換（[サンプル数, タイムステップ, 特徴量数]）
     X = X.reshape((X.shape[0], look_back, -1))
@@ -52,10 +76,10 @@ def build_lstm_model(input_shape):
 # 予測処理
 def lstm_forecast():
     df = pd.read_csv("../data/counseling_count_group.csv")
-    df = df.rename(columns={
-        "日付": "date"
-        }
-    )
+    # df = df.rename(columns={
+    #     "日付": "date"
+    #     }
+    # )
 
     # データの準備
     look_back = 7  # 過去7日間を使用
