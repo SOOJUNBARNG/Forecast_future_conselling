@@ -61,6 +61,8 @@ def prepare_lstm_data(df, look_back=7):
     look_back_count = look_back + len(feature_cols)
     X = X.reshape((X.shape[0], look_back_count, -1))
 
+    # X_pd = pd.DataFrame(X.reshape(X.shape[0], -1), columns=[f"feature_{i}" for i in range(X.shape[1] * X.shape[2])])
+    # X_pd.to_csv("../data/lstm_input.csv", index=False)
     return X, y, scaler, df.index
 
 # LSTMモデルの構築

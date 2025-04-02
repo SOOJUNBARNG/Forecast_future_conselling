@@ -5,8 +5,9 @@ import lightgbm as lgb
 import matplotlib.pyplot as plt
 
 # 統計・評価ライブラリ
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+import optuna
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 # 時間関連ライブラリ
 from datetime import datetime, timedelta
@@ -28,6 +29,56 @@ start_data = pd.to_datetime(start_data)
 current_date = pd.to_datetime(datetime.today().date())
 current_date = pd.to_datetime("2025-03-01")
 data_start_date = pd.to_datetime(f"{start_data}")
+
+
+def objective(trial):
+    params = {
+        "objective": "regression",
+        "metric": "mae",
+        "boosting_type": "gbdt",
+        "learning_rate": trial.suggest_loguniform("learning_rate", 0.01, 0.3),
+        "num_leaves": trial.suggest_int("num_leaves", 20, 150),
+        "max_depth": trial.suggest_int("max_depth", -1, 15),
+        "feature_fraction": trial.suggest_uniform("feature_fraction", 0.4, 1.0),
+        "bagging_fraction": trial.suggest_uniform("bagging_fraction", 0.4, 1.0),
+        "bagging_freq": trial.suggest_int("bagging_freq", 1, 10),
+        "lambda_l1": trial.suggest_loguniform("lambda_l1", 1e-8, 10.0),
+        "lambda_l2": trial.suggest_loguniform("lambda_l2", 1e-8, 10.0),
+        "min_child_samples": trial.suggest_int("min_child_samples", 5, 100),
+    }
+    
+    df = pd.read_csv("../data/counseling_count_group.csv")
+    df = data_process_group(df, data_start_date, current_date)
+    df = prepare_features(df)
+    
+    train_df = df.loc[df.index <= pd.to_datetime(current_date)]
+    target_col = "counseled"
+    feature_cols = [col for col in train_df.columns if col != target_col]
+    X_train, X_val, y_train, y_val = train_test_split(
+        train_df[feature_cols], train_df[target_col], test_size=0.2, shuffle=False
+    )
+    
+    train_data = lgb.Dataset(X_train, label=y_train)
+    val_data = lgb.Dataset(X_val, label=y_val, reference=train_data)
+    
+    model = lgb.train(
+        params, train_data, valid_sets=[val_data]
+        # ,verbose_eval=False
+        # ,early_stopping_rounds=50
+    )
+    
+    y_pred = model.predict(X_val)
+    return mean_absolute_error(y_val, y_pred)
+
+def retrun_best_value():
+
+    # Run Optuna optimization
+    study = optuna.create_study(direction="minimize")
+    study.optimize(objective, n_trials=50)
+
+    best_params = study.best_params
+    print("Best parameters:", best_params)
+    return best_params
 
 def prepare_features(df):
     """特徴量エンジニアリング"""
@@ -74,19 +125,20 @@ def lightgbm_forecast():
     train_data = lgb.Dataset(X_train, label=y_train)
     val_data = lgb.Dataset(X_val, label=y_val, reference=train_data)
 
+    params = retrun_best_value()
     # LightGBMモデルのパラメータ
-    params = {
-        "objective": "regression",
-        "metric": "mae",
-        "boosting_type": "gbdt",
-        "learning_rate": 0.05,
-        "num_leaves": 31,
-        "max_depth": -1,
-        "feature_fraction": 0.8,
-        "bagging_fraction": 0.8,
-        "bagging_freq": 5,
-        "verbose": -1,
-    }
+    # params = {
+    #     "objective": "regression",
+    #     "metric": "mae",
+    #     "boosting_type": "gbdt",
+    #     "learning_rate": 0.05,
+    #     "num_leaves": 31,
+    #     "max_depth": -1,
+    #     "feature_fraction": 0.8,
+    #     "bagging_fraction": 0.8,
+    #     "bagging_freq": 5,
+    #     "verbose": -1,
+    # }
 
     # 学習
     model = lgb.train(
