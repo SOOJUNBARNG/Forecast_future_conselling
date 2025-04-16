@@ -190,7 +190,7 @@ def build_lstm_model(input_shape):
     return model
 
 # 予測処理
-def lstm_forecast():
+def lstm_forecast(data_start_date, end_data):
     df = pd.read_csv("../data/counseling_count_group.csv")
     # データの準備
     look_back = 7  # 過去7日間を使用

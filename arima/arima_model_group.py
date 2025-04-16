@@ -25,7 +25,7 @@ from utils.data_pre_process import data_process_group
 
 
 # Get the current date
-start_data = "2024-01-10"
+start_data = "2023-04-01"
 start_data = pd.to_datetime(start_data)
 current_date = pd.to_datetime(datetime.today().date())
 current_date = pd.to_datetime("2025-03-01")
