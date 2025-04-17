@@ -22,6 +22,15 @@ df.set_index("日付", inplace=True)
 
 current_date = pd.to_datetime(datetime.today().date())
 
+import sys
+from pathlib import Path
+
+# プロジェクトルートを `sys.path` に追加
+project_root = Path(__file__).resolve().parents[1]
+sys.path.append(str(project_root))
+
+from utils.data_pre_process import data_process_group
+
 def get_nth_week_of_month(date):
     first_day_of_month = date.replace(day=1)
     first_weekday = first_day_of_month.weekday()  # Monday = 0, Sunday = 6
@@ -32,73 +41,29 @@ def get_nth_week_of_month(date):
     return nth_week
 
 
+# Get the current date
+start_data = "2023-04-01"
+start_data = pd.to_datetime(start_data)
+current_date = pd.to_datetime(datetime.today().date())
+current_date = pd.to_datetime("2025-03-28")
+data_start_date = pd.to_datetime(f"{start_data}")
+
 def data_process():
-    # Load the dataset
     df = pd.read_csv("../data/counseling_count_group.csv")
-    df = df[["日付", "counseled"]]
-    df = df.rename(
-        columns={
-            "日付": "date",
-        }
-    )
-    df["date"] = pd.to_datetime(df["date"]).dt.strftime("%Y-%m-%d")
+    df = data_process_group(df, data_start_date, current_date)
+    df.to_csv("hello.csv", index=False)
+    # Convert date column to datetime
+    df["date"] = pd.to_datetime(df["date"])
 
-    df = df[df["date"] > f"{start_data}"]
-
-    calendar_df = pd.read_csv("../data/calender.csv")
-    calendar_df = calendar_df[["日付", "祝日フラグ", "TCB休診フラグ"]]
-    calendar_df = calendar_df.rename(
-        columns={
-            "日付": "date",
-            "祝日フラグ": "holiday_flag",
-            "TCB休診フラグ": "tcb_holiday_flag",
-        }
-    )
-    calendar_df["date"] = pd.to_datetime(calendar_df["date"]).dt.strftime("%Y-%m-%d")
-    cross_df = df.merge(calendar_df, on="date", how="outer")
-    cross_df["counseled"] = cross_df["counseled"].fillna(0)
-
-    # cross_df.to_csv("print_check_ver2.csv", index=False)
-
-    # Display results
-    print(cross_df.index[cross_df.index.duplicated()])
-    cross_df = cross_df.reset_index()
-
-    cross_df["national_holiday"] = cross_df["holiday_flag"].apply(
-        lambda x: 0 if x is False else 1
-    )
-    cross_df["tcb_holiday"] = cross_df.apply(
-        lambda row: 0 if row["tcb_holiday_flag"] is False else 1, axis=1
-    )
-    data_process = cross_df[["date", "national_holiday", "tcb_holiday", "counseled"]]
-    data_process["date"] = pd.to_datetime(data_process["date"], errors="coerce")
-    data_process = data_process.rename(
-        columns={
-            "tcb_holiday": "clinic_holiday",
-        }
-    )
-    data_process["day"] = data_process["date"].dt.dayofweek
-    # df_before_sarima["day_of_week"] = df_before_sarima["date"].dt.dayofweek.map(
-    #     {0: "月", 1: "火", 2: "水", 3: "木", 4: "金", 5: "土", 6: "日"}
-    # )
-    data_process["week_of_month"] = data_process["date"].apply(lambda x: get_nth_week_of_month(x))
-    data_process["day"] = data_process.apply(
-        lambda x: 5 if x["national_holiday"] == 1 else x["day"], axis=1
-    )
-
-    data_process = data_process[data_process["date"] >= pd.Timestamp(f"{start_data}")]
-
-    print(data_process.index[data_process.index.duplicated()])
-
-    return data_process
+    return df
 
 
 def arima_objective(trial):
     """Objective function for Optuna optimization."""
     # {'p': 9, 'd': 1, 'q': 10}
-    p = trial.suggest_int("p", 8, 10)
-    d = trial.suggest_int("d", 0, 2)
-    q = trial.suggest_int("q", 8, 10)
+    p = trial.suggest_int("p", 0, 10)
+    d = trial.suggest_int("d", 0, 5)
+    q = trial.suggest_int("q", 0, 10)
 
     data_process_df = pd.DataFrame(data_process())
     print(data_process_df.columns)
@@ -117,7 +82,7 @@ def arima_objective(trial):
     # Exogenous variables (holiday flags)
     exog = df_exog.loc[
         df_exog.index <= current_date,
-        ["national_holiday", "clinic_holiday", "day", "week_of_month"],
+        ["day", "counseled_lag1", "counseled_lag7", "counseled_lag28"],
     ]
 
     try:
@@ -160,7 +125,7 @@ def optuna_arima():
     # Exogenous variables (holiday flags)
     exog = df_exog.loc[
         df_exog.index <= current_date,
-        ["national_holiday", "clinic_holiday", "day", "week_of_month"],
+        ["day", "counseled_lag1", "counseled_lag7", "counseled_lag28"],
     ]
 
     best_model = ARIMA(
@@ -255,7 +220,7 @@ def optuna_sarima():
     # Exogenous variables (holiday flags)
     exog = df_exog.loc[
         df_exog.index <= current_date,
-        ["national_holiday", "clinic_holiday", "day_of_week"],
+        ["day", "counseled_lag1", "counseled_lag7", "counseled_lag28"],
     ]
 
     # 最適パラメータでモデルを再学習
