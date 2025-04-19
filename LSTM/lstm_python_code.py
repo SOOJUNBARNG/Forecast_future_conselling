@@ -23,7 +23,7 @@ from utils.print_output_in_matplotlib import plot_result
 from utils.data_pre_process import data_process_group
 
 # Get the current date
-start_data = "2024-01-10"
+start_data = "2023-04-10"
 end_data = "2025-02-28"
 start_data = pd.to_datetime(start_data)
 end_data = pd.to_datetime(end_data)
@@ -263,8 +263,15 @@ def lstm_forecast(data_start_date, end_data):
     plt.tight_layout()
     plt.show()
 
+# Get the current date
+start_data = "2023-04-01"
+start_data = pd.to_datetime(start_data)
+current_date = pd.to_datetime(datetime.today().date())
+current_date = pd.to_datetime("2025-03-27")
+data_start_date = pd.to_datetime(f"{start_data}")
+
 def main():
-    lstm_forecast()
+    lstm_forecast(data_start_date, end_data)
 
 if __name__ == "__main__":
     main()

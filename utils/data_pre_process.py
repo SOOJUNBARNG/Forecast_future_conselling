@@ -163,11 +163,13 @@ def data_process_group(df, data_start_date, current_date):
         }
     )
     data_process["day"] = data_process["date"].dt.dayofweek
-    # data_process["week_of_month"] = data_process["date"].apply(lambda x: get_nth_week_of_month(x))
+    data_process["month"] = data_process["date"].dt.month
+
+    data_process["week_of_month"] = data_process["date"].apply(lambda x: get_nth_week_of_month(x))
     # df["date"] = pd.to_datetime(df["date"])
     # data_process["weekday"] = data_process["date"].dt.weekday
-    # data_process["counseled_lag1"] = data_process["counseled"].shift(1)
-    # data_process["counseled_lag7"] = data_process["counseled"].shift(7)
+    data_process["counseled_lag1"] = data_process["counseled"].shift(1)
+    data_process["counseled_lag7"] = data_process["counseled"].shift(7)
     # data_process["counseled_lag28"] = data_process["counseled"].shift(28)
     data_process["national_holiday"] = data_process.apply(
         lambda x: 1 if x["day"] == 5 or x["day"] == 6 or x["national_holiday"] == 1 else 0, axis=1

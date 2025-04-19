@@ -34,6 +34,7 @@ data_start_date = pd.to_datetime(f"{start_data}")
 def arima_output():
     df = pd.read_csv("../data/counseling_count_group.csv")
     df = data_process_group(df, data_start_date, current_date)
+    print(df.columns)
 
     df = df[(df["date"] > start_data) & (df["date"] < current_date)]
 

@@ -28,7 +28,7 @@ from utils.data_pre_process import data_process_group
 start_data = "2023-04-01"
 start_data = pd.to_datetime(start_data)
 current_date = pd.to_datetime(datetime.today().date())
-current_date = pd.to_datetime("2025-01-28")
+current_date = pd.to_datetime("2025-03-27")
 data_start_date = pd.to_datetime(f"{start_data}")
 
 def arima_output():
@@ -50,12 +50,13 @@ def arima_output():
     # Exogenous variables (holiday flags)
     exog = df.loc[
         df.index <= pd.to_datetime(current_date),
-        ["day", "national_holiday"],
+        ["day", "national_holiday","week_of_month" ],
     ]
     forecast_exog = df.loc[
         df.index > pd.to_datetime(current_date),
-        ["day", "national_holiday"],
+        ["day", "national_holiday","week_of_month" ],
     ][:28]
+
 
     # Dayのみは
 
