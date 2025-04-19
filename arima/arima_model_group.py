@@ -28,7 +28,7 @@ from utils.data_pre_process import data_process_group
 start_data = "2023-04-01"
 start_data = pd.to_datetime(start_data)
 current_date = pd.to_datetime(datetime.today().date())
-current_date = pd.to_datetime("2025-03-01")
+current_date = pd.to_datetime("2025-01-28")
 data_start_date = pd.to_datetime(f"{start_data}")
 
 def arima_output():
@@ -44,23 +44,20 @@ def arima_output():
     # Set date as index
     df.set_index("date", inplace=True)
 
-    # Convert holidays to binary flags
-    df[["national_holiday", "clinic_holiday"]] = df[
-        ["national_holiday", "clinic_holiday"]
-    ].applymap(lambda x: 1 if x else 0)
-
     # Define target variable
     y = df.loc[df.index <= pd.to_datetime(current_date), "counseled"]
 
     # Exogenous variables (holiday flags)
     exog = df.loc[
         df.index <= pd.to_datetime(current_date),
-        ["national_holiday", "clinic_holiday", "day", "week_of_month"],
+        ["day", "national_holiday"],
     ]
     forecast_exog = df.loc[
         df.index > pd.to_datetime(current_date),
-        ["national_holiday", "clinic_holiday", "day", "week_of_month"],
+        ["day", "national_holiday"],
     ][:28]
+
+    # Dayのみは
 
     # Find the best ARIMA (p, d, q) with exogenous variables
     # {'p': 9, 'd': 1, 'q': 10} MAE: 146.07, RMSE: 222.10 今までベスト  

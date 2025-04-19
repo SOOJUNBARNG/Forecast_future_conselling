@@ -142,15 +142,19 @@ def data_process_group(df, data_start_date, current_date):
     # cross_df.to_csv("print_check_ver2.csv", index=False)
 
     # Display results
-    print(cross_df.index[cross_df.index.duplicated()])
+    # print(cross_df.index[cross_df.index.duplicated()])
     cross_df = cross_df.reset_index()
+    # cross_df.to_csv("check_for_great.csv", index=False)
+    # print(type(cross_df["holiday_flag"]))
+    # print(cross_df["holiday_flag"].unique())
 
-    cross_df["national_holiday"] = cross_df["holiday_flag"].apply(
-        lambda x: 0 if x is False else 1
-    )
-    cross_df["tcb_holiday"] = cross_df.apply(
-        lambda row: 0 if row["tcb_holiday_flag"] is False else 1, axis=1
-    )
+    # cross_df["national_holiday"] = cross_df["holiday_flag"].astype(str).map({"True": True, "False": False}).astype(int)
+    # cross_df["tcb_holiday"] = cross_df["tcb_holiday_flag"].astype(str).map({"True": True, "False": False}).astype(int)
+
+    cross_df["national_holiday"] = cross_df["holiday_flag"].astype(int)
+    cross_df["tcb_holiday"] = cross_df["tcb_holiday_flag"].astype(int)
+
+
     data_process = cross_df[["date", "national_holiday", "tcb_holiday", "counseled"]]
     data_process["date"] = pd.to_datetime(data_process["date"], errors="coerce")
     data_process = data_process.rename(
@@ -159,15 +163,25 @@ def data_process_group(df, data_start_date, current_date):
         }
     )
     data_process["day"] = data_process["date"].dt.dayofweek
-    data_process["week_of_month"] = data_process["date"].apply(lambda x: get_nth_week_of_month(x))
-    data_process["day"] = data_process.apply(
-        lambda x: 5 if x["national_holiday"] == 1 else x["day"], axis=1
-    )
+    # data_process["week_of_month"] = data_process["date"].apply(lambda x: get_nth_week_of_month(x))
+    # df["date"] = pd.to_datetime(df["date"])
+    # data_process["weekday"] = data_process["date"].dt.weekday
+    # data_process["counseled_lag1"] = data_process["counseled"].shift(1)
+    # data_process["counseled_lag7"] = data_process["counseled"].shift(7)
+    # data_process["counseled_lag28"] = data_process["counseled"].shift(28)
+    data_process["national_holiday"] = data_process.apply(
+        lambda x: 1 if x["day"] == 5 or x["day"] == 6 or x["national_holiday"] == 1 else 0, axis=1
+    ) 
+    data_process = data_process.drop(["clinic_holiday"], axis=1)
+    data_process = data_process.dropna()
+
+    # data_process["day"] = data_process.apply(
+    #     lambda x: 5 if x["national_holiday"] == 1 else x["day"], axis=1
+    # )
     # df_before_sarima["day_of_week"] = df_before_sarima["date"].dt.dayofweek.map(
     #     {0: "月", 1: "火", 2: "水", 3: "木", 4: "金", 5: "土", 6: "日"}
     # )
     data_process = data_process[data_process["date"] >= pd.Timestamp(f"{data_start_date}")]
 
-    print(data_process.index[data_process.index.duplicated()])
-
     return data_process
+

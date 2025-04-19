@@ -51,7 +51,7 @@ data_start_date = pd.to_datetime(f"{start_data}")
 def data_process():
     df = pd.read_csv("../data/counseling_count_group.csv")
     df = data_process_group(df, data_start_date, current_date)
-    df.to_csv("hello.csv", index=False)
+    # df.to_csv("hello.csv", index=False)
     # Convert date column to datetime
     df["date"] = pd.to_datetime(df["date"])
 
@@ -66,6 +66,7 @@ def arima_objective(trial):
     q = trial.suggest_int("q", 0, 10)
 
     data_process_df = pd.DataFrame(data_process())
+    data_process_df.to_csv("hello2.csv", index=False)
     print(data_process_df.columns)
     data_process_df["date"] = pd.to_datetime(data_process_df["date"], errors="coerce")
     data_process_df.reset_index(inplace=True)
