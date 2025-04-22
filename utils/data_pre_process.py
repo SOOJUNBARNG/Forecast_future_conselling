@@ -163,18 +163,35 @@ def data_process_group(df, data_start_date, current_date):
         }
     )
     data_process["day"] = data_process["date"].dt.dayofweek
+    data_process["day_num"] = data_process["date"].dt.day
+
+    # Define bin ranges as tuples: (label, start_day, end_day)
+    bins = [
+        ("26_31", 26, 31),
+    ]
+
+    # Generate binary columns for each bin
+    for label, start, end in bins:
+        col_name = f"{label}_bin"
+        data_process[col_name] = data_process["day_num"].apply(lambda x: 1 if start <= x <= end else 0)
+
+    
     data_process["month"] = data_process["date"].dt.month
+    data_process["month_group_one"] = data_process["month"].apply(
+        lambda x: 1 if x == 12 else 0
+    )
+    data_process["month_group_two"] = data_process["month"].apply(
+        lambda x: 1 if x == 2 or x == 3 else 0
+    )
 
     data_process["week_of_month"] = data_process["date"].apply(lambda x: get_nth_week_of_month(x))
     # df["date"] = pd.to_datetime(df["date"])
     # data_process["weekday"] = data_process["date"].dt.weekday
     data_process["counseled_lag1"] = data_process["counseled"].shift(1)
-    data_process["counseled_lag7"] = data_process["counseled"].shift(7)
-    # data_process["counseled_lag28"] = data_process["counseled"].shift(28)
     data_process["national_holiday"] = data_process.apply(
         lambda x: 1 if x["day"] == 5 or x["day"] == 6 or x["national_holiday"] == 1 else 0, axis=1
     ) 
-    data_process = data_process.drop(["clinic_holiday"], axis=1)
+    data_process = data_process.drop(["clinic_holiday", "month"], axis=1)
     data_process = data_process.dropna()
 
     # data_process["day"] = data_process.apply(
